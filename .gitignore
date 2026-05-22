@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# local environment files — never commit secrets
+.env
+.env.*
+!.env.example
+
+# editor / OS
+.DS_Store
+.vite
+*.log
+logs
