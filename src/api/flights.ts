@@ -1,7 +1,17 @@
 import type { FlightRecord } from '../types/flight';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') ?? '';
+const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') ?? '';
 const API_KEY = import.meta.env.VITE_API_KEY;
+
+/**
+ * Base for API requests. In dev, requests route through the Vite proxy
+ * (`/api`, configured in vite.config.ts) so the browser makes a same-origin
+ * request — this sidesteps the backend's missing CORS headers (guidelines
+ * section 6). A production build calls the API directly and still needs the
+ * backend CORS fix to land.
+ */
+const API_BASE_URL =
+  import.meta.env.DEV && RAW_API_BASE_URL ? '/api' : RAW_API_BASE_URL;
 
 export interface FlightQuery {
   /** Aircraft callsign to search for. */
@@ -41,7 +51,7 @@ export async function fetchFlights(
     );
   }
 
-  const url = new URL(`${API_BASE_URL}/flights`);
+  const url = new URL(`${API_BASE_URL}/flights`, window.location.origin);
   url.searchParams.set('callsign', query.callsign);
   if (query.timestamp) {
     url.searchParams.set('timestamp', query.timestamp);
@@ -60,7 +70,10 @@ export async function fetchFlights(
     response = await fetch(url, { headers, signal });
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') throw err;
-    throw new ApiError('Could not reach the flight API. Check your connection.');
+    throw new ApiError(
+      'Could not reach the flight API. It may be offline, or the request ' +
+        'was blocked by CORS — check the browser console for details.',
+    );
   }
 
   if (!response.ok) {
