@@ -17,9 +17,17 @@ export function FlightCard({ flight }: FlightCardProps) {
   const detailsId = useId();
   const planespottersUrl = "https://planespotters.net/photos/reg/"
 
+  // const timestamp = new Date(flight.timestamp_readable ?? '').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+  const get_timestamp = (ts: string) => {
+    if (!ts) {
+      return null;
+    }
+    return new Date(flight.timestamp_readable ?? '').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
   const header = (
     <>
-      <span className="flight-card-callsign">{flight.callsign ?? 'Unknown'}</span>
+      <span className="flight-card-callsign">{get_timestamp(flight.timestamp_readable ?? '') ?? 'Unknown'}</span>
       <time className="flight-card-time">{formatTimestamp(flight.timestamp)}</time>
     </>
   );

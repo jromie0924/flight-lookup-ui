@@ -37,7 +37,14 @@ export default defineConfig(({ mode }) => {
       // home screen. `autoUpdate` keeps installed copies fresh on next visit.
       VitePWA({
         registerType: 'autoUpdate',
-        injectRegister: 'auto',
+        // `injectRegister: null` because we register manually in src/main.tsx
+        // so we can force a reload the moment a new SW activates. Without
+        // that, installed PWAs sit on the old precached bundle until every
+        // tab/window is fully closed — which on mobile is approximately
+        // never. clientsClaim + skipWaiting make the new SW take over
+        // existing pages immediately on download.
+        injectRegister: null,
+        workbox: { clientsClaim: true, skipWaiting: true },
         includeAssets: ['icon.svg'],
         manifest: {
           name: 'Plane Tracker - Flight Lookup',
