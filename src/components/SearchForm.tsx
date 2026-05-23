@@ -38,7 +38,7 @@ export function SearchForm({ onSearch, busy }: SearchFormProps) {
 
       <label className="field">
         <span className="field-label">
-          Around time{' '}
+          Around time (CST){' '}
           <span className="field-hint">optional &middot; &plusmn;15 min window</span>
         </span>
         <input

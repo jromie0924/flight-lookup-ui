@@ -13,6 +13,7 @@ export default function App() {
   const [error, setError] = useState('');
   const [lastQuery, setLastQuery] = useState<FlightQuery | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const githubUrl = 'https://github.com/jromie0924/plane-tracker-rgb-pi';
 
   const handleSearch = useCallback(async (query: FlightQuery) => {
     // Cancel any request still in flight so its result can't land late.
@@ -44,7 +45,7 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <h1>&#9992;&#65039; Flight Lookup</h1>
-        <p className="app-tagline">Search flights logged by Jackson's plane tracker.</p>
+        <p className="app-tagline">Search recent flights logged over Chicago.</p>
       </header>
 
       <main className="app-main">
@@ -66,7 +67,7 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        <p>Read-only companion app for plane-tracker-rgb-pi.</p>
+        <p>Data captured by <a className="footer-link" href={`${githubUrl}`} target="_blank">plane-tracker-rgb-pi.</a></p>
       </footer>
     </div>
   );

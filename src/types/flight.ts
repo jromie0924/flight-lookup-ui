@@ -11,7 +11,7 @@ export interface FlightRecord {
   /** Aircraft callsign the row was logged under. */
   callsign?: string;
   /** When the row was logged — epoch milliseconds (or ISO string). */
-  timestamp?: string | number;
+  timestamp?: number;
   /** ISO-8601 form of `timestamp`, if the backend includes it. */
   timestamp_readable?: string;
   /** 24-bit ICAO hex address. */

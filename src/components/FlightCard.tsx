@@ -18,17 +18,17 @@ export function FlightCard({ flight }: FlightCardProps) {
   const planespottersUrl = "https://planespotters.net/photos/reg/"
 
   // const timestamp = new Date(flight.timestamp_readable ?? '').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
-  const get_timestamp = (ts: string) => {
+  const get_timestamp = (ts: number) => {
     if (!ts) {
       return null;
     }
-    return new Date(flight.timestamp_readable ?? '').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+    return new Date(ts ?? 0).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
   }
 
   const header = (
     <>
-      <span className="flight-card-callsign">{get_timestamp(flight.timestamp_readable ?? '') ?? 'Unknown'}</span>
-      <time className="flight-card-time">{formatTimestamp(flight.timestamp)}</time>
+      <span className="flight-card-callsign">{get_timestamp(flight.timestamp ?? 0) ?? 'Unknown'}</span>
+      <p className="flight-card-time">&#9992;&#65038;</p>
     </>
   );
 
@@ -116,11 +116,4 @@ function buildDetails(flight: FlightRecord): DetailRow[] {
   }
 
   return rows;
-}
-
-function formatTimestamp(raw: FlightRecord['timestamp']): string {
-  if (raw === undefined || raw === '') return 'Unknown time';
-  const date = new Date(raw);
-  if (Number.isNaN(date.getTime())) return String(raw);
-  return date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }

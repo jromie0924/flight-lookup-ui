@@ -75,6 +75,12 @@ body {
   text-align: center;
 }
 
+.footer-link {
+  padding: inherit;
+  font-size: inherit;
+  color: var(--color-primary);
+}
+
 /* search form */
 .search-form {
   display: flex;
@@ -226,7 +232,7 @@ body {
 
 .flight-card-time {
   margin-left: auto;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--color-text-muted);
 }
 
@@ -253,7 +259,8 @@ body {
 .flight-card-link {
   display: inline-block;
   margin: 14px 0 0;
-  font-size: 0.9rem;
+  font-size: 1.0rem;
+  color: var(--color-primary);
 }
 
 /* dark mode */
