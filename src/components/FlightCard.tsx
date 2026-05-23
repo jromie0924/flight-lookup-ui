@@ -17,7 +17,6 @@ export function FlightCard({ flight }: FlightCardProps) {
   const detailsId = useId();
   const planespottersUrl = "https://planespotters.net/photos/reg/"
 
-  // const timestamp = new Date(flight.timestamp_readable ?? '').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
   const get_timestamp = (ts: number) => {
     if (!ts) {
       return null;
