@@ -1,0 +1,199 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Static hosting for flight-lookup-ui:
+  private S3 bucket + CloudFront (OAC) + ACM cert (DNS-validated)
+  for a custom subdomain whose DNS lives outside AWS (NameCheap).
+  Deploy in us-east-1 — CloudFront requires the cert in that region.
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: flightlookup.tolfman.com
+    Description: Fully-qualified subdomain that will serve the app.
+
+  PriceClass:
+    Type: String
+    Default: PriceClass_100
+    AllowedValues: [PriceClass_100, PriceClass_200, PriceClass_All]
+    Description: >
+      PriceClass_100 = US/Canada/Europe edges only (cheapest).
+      Free-tier traffic limits apply regardless of which you pick.
+
+Resources:
+  # ---------------------------------------------------------------------------
+  # S3 bucket holding the built dist/ files. Private — only CloudFront reads it.
+  # ---------------------------------------------------------------------------
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontOACRead
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${SiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+
+  # ---------------------------------------------------------------------------
+  # ACM certificate. DNS-validated. You must add the validation CNAME on
+  # NameCheap manually — the stack will sit in CREATE_IN_PROGRESS until you do.
+  # ---------------------------------------------------------------------------
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
+
+  # ---------------------------------------------------------------------------
+  # Origin Access Control — the modern, recommended way for CloudFront → S3.
+  # ---------------------------------------------------------------------------
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-oac"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ---------------------------------------------------------------------------
+  # Cache policies. Two of them:
+  #   - HtmlPolicy: short TTL so a new deploy goes live within a minute.
+  #   - AssetPolicy: long TTL — Vite emits content-hashed filenames in /assets.
+  # ---------------------------------------------------------------------------
+  HtmlCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub "${AWS::StackName}-html"
+        DefaultTTL: 60
+        MinTTL: 0
+        MaxTTL: 300
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: true
+          EnableAcceptEncodingBrotli: true
+          CookiesConfig:
+            CookieBehavior: none
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+
+  AssetCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Sub "${AWS::StackName}-assets"
+        DefaultTTL: 31536000  # 1 year
+        MinTTL: 86400
+        MaxTTL: 31536000
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingGzip: true
+          EnableAcceptEncodingBrotli: true
+          CookiesConfig:
+            CookieBehavior: none
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: none
+
+  # ---------------------------------------------------------------------------
+  # CloudFront distribution.
+  # ---------------------------------------------------------------------------
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "flight-lookup-ui (${DomainName})"
+        Aliases:
+          - !Ref DomainName
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: !Ref PriceClass
+
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt OriginAccessControl.Id
+
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: !Ref HtmlCachePolicy
+
+        CacheBehaviors:
+          - PathPattern: /assets/*
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            Compress: true
+            CachePolicyId: !Ref AssetCachePolicy
+
+        # SPA fallback. A missing object (e.g. /flights/ABC123 if you add
+        # client-side routing later) gets index.html with a 200 so the SPA
+        # can resolve the route in the browser.
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 10
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 10
+
+        ViewerCertificate:
+          AcmCertificateArn: !Ref Certificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+
+Outputs:
+  BucketName:
+    Description: S3 bucket holding the built site.
+    Value: !Ref SiteBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketName"
+
+  DistributionId:
+    Description: CloudFront distribution ID (used for cache invalidations).
+    Value: !Ref Distribution
+    Export:
+      Name: !Sub "${AWS::StackName}-DistributionId"
+
+  DistributionDomainName:
+    Description: >
+      CloudFront's domain. Create a CNAME on NameCheap:
+      flightlookup -> <this value>
+    Value: !GetAtt Distribution.DomainName
+
+  AppUrl:
+    Description: Final URL of the deployed app.
+    Value: !Sub "https://${DomainName}"

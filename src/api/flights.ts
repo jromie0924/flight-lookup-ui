@@ -56,14 +56,11 @@ export async function fetchFlights(
   if (query.timestamp) {
     url.searchParams.set('timestamp', query.timestamp);
   }
+  if (API_KEY) {
+    url.searchParams.set('key', API_KEY);
+  }
 
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (API_KEY) {
-    // API Gateway API keys use the `x-api-key` header. If the backend lands on
-    // a shared bearer token instead, change this to:
-    //   headers.Authorization = `Bearer ${API_KEY}`;
-    headers['x-api-key'] = API_KEY;
-  }
 
   let response: Response;
   try {
