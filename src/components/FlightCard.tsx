@@ -15,7 +15,8 @@ export function FlightCard({ flight }: FlightCardProps) {
   const details = buildDetails(flight);
   const hasDetails = details.length > 0;
   const detailsId = useId();
-  const planespottersUrl = "https://planespotters.net/photos/reg/"
+  const planespottersUrl = "https://planespotters.net/photos/reg/";
+  const openstreetmapUrl = "https://www.openstreetmap.org/";
 
   const get_timestamp = (ts: number) => {
     if (!ts) {
@@ -58,8 +59,28 @@ export function FlightCard({ flight }: FlightCardProps) {
                 <dd>{row.value}</dd>
               </div>
             ))}
+            {flight.r && (
+            <a
+              className="flight-card-detail"
+              href={`${planespottersUrl}${encodeURIComponent(flight.r)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              planespotters
+            </a>
+          )}
+          {flight.lat && flight.lon && (
+            <a
+              className="flight-card-detail"
+              href={`${openstreetmapUrl}?mlat=${flight.lat}&mlon=${flight.lon}#map=10/${flight.lat}/${flight.lon}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Location
+            </a>
+          )}
           </dl>
-          {flight.r && (
+          {/* {flight.r && (
             <a
               className="flight-card-link"
               href={`${planespottersUrl}${encodeURIComponent(flight.r)}`}
@@ -68,7 +89,17 @@ export function FlightCard({ flight }: FlightCardProps) {
             >
               planespotters
             </a>
-          )}
+          )} */}
+          {/* {flight.lat && flight.lon && (
+            <a
+              className="flight-card-link"
+              href={`${openstreetmapUrl}?mlat=${flight.lat}&mlon=${flight.lon}#map=10/${flight.lat}/${flight.lon}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Location
+            </a>
+          )} */}
         </>
       )}
     </article>
