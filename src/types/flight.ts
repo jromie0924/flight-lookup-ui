@@ -36,6 +36,10 @@ export interface FlightRecord {
   lat?: number;
   /** Longitude in decimal degrees. */
   lon?: number;
+  /** Aircraft origin (e.g. KORD) */
+  origin?: string;
+  /** Aircraft destination (e.g. KMIA) */
+  destination?: string;
   /** Tolerate the many other ADS-B fields the API returns. */
   [key: string]: unknown;
 }

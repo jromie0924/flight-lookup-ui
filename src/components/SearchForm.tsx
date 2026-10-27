@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { SubmitEvent } from 'react';
 import type { FlightQuery } from '../api/flights';
 
 interface SearchFormProps {
@@ -11,7 +11,7 @@ export function SearchForm({ onSearch, busy }: SearchFormProps) {
   const [callsign, setCallsign] = useState('');
   const [timestamp, setTimestamp] = useState('');
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = callsign.trim().toUpperCase();
     if (!trimmed) return;

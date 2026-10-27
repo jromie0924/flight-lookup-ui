@@ -116,6 +116,16 @@ function buildDetails(flight: FlightRecord): DetailRow[] {
   // add('Callsign', flight.callsign);
   add('Registration', flight.r);
   add('Aircraft', flight.t);
+  
+  if (flight.origin && flight.destination) {
+    if (typeof flight.origin === 'string') {
+      add('Origin', flight.origin);
+    }
+    if (typeof flight.destination === 'string') {
+      add('Destination', flight.destination);
+    }
+  }
+
   if (typeof flight.squawk === 'string') {
     add('Squawk', flight.squawk);
   }
